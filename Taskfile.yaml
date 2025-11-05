@@ -1,0 +1,44 @@
+
+version: "3.0"
+
+dotenv: ['.env']
+
+vars:
+  POSTGRES_URL: "postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_HOST}}:{{.POSTGRES_PORT}}/{{.POSTGRES_DATABASE}}?sslmode={{.POSTGRES_SSL_MODE}}"
+
+tasks:
+  init:
+    desc: "Инициализация проекта"
+    cmds:
+      - go mod tidy
+      - cp .env.example .env
+
+  read_service:
+    desc: "Запуск ReadService (API)"
+    cmds:
+      - go run cmd/read_service.go
+
+  write_service:
+    desc: "Запуск WriteService"
+    cmds:
+      - go run cmd/write_service.go
+
+  test:
+    desc: "Запуск тестов"
+    cmds:
+      - go test ./...
+
+  migrate:
+    desc: "Применение миграций PostgreSQL"
+    cmds:
+      - migrate -path migrations -database {{.POSTGRES_URL}} up
+
+  downgrade:
+    desc: "Откат миграций PostgreSQL"
+    cmds:
+      - migrate -path migrations -database {{.POSTGRES_URL}} down
+
+  migration:
+    desc: "Создание миграции PostgreSQL"
+    cmds:
+      - migrate create -ext sql -dir migrations -seq {{.CLI_ARGS}}
